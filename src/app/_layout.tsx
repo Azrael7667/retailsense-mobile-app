@@ -1,18 +1,48 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { Stack, useRouter, useSegments } from "expo-router"
+import { StatusBar } from "expo-status-bar"
+import { useEffect } from "react"
+import { ActivityIndicator, StyleSheet, View } from "react-native"
+import { AuthProvider, useAuth } from "../context/AuthContext"
+import { colors } from "../theme"
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+function Gate() {
+  const { session, loading } = useAuth()
+  const segments = useSegments()
+  const router = useRouter()
 
-SplashScreen.preventAutoHideAsync();
+    useEffect(() => {
+    if (loading) return
+    const onLogin = (segments[0] as string) === "login"
+    if (!session && !onLogin) router.replace("/login" as any)
+    else if (session && onLogin) router.replace("/" as any)
+  }, [session, loading, segments])
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
-  );
+    <>
+      <StatusBar style="light" />
+      <Stack screenOptions={{ headerShown: false }} />
+      {loading && (
+        <View style={styles.loading}>
+          <ActivityIndicator color={colors.lime} size="large" />
+        </View>
+      )}
+    </>
+  )
 }
+
+export default function RootLayout() {
+  return (
+    <AuthProvider>
+      <Gate />
+    </AuthProvider>
+  )
+}
+
+const styles = StyleSheet.create({
+  loading: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: colors.navy,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+})
